@@ -1,0 +1,27 @@
+styles:
+  - Crew Neck
+  - V-Neck
+  - Long Sleeve
+  - Tank Top
+
+genders:
+  - Male
+  - Female
+  - Unisex
+
+colors:
+  - White
+  - Black
+  - Blue
+  - Red
+  - Green
+  - Custom Colors
+
+sizes:
+  - XS, S, M, L, XL, XXL
+
+printing_options:
+  - Screen Printing
+  - Embroidery
+  - Heat Transfer
+  - Direct-to-Garment
