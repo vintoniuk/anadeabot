@@ -7,7 +7,6 @@ class TShirtColor(StrEnum):
     BLUE = auto()
     RED = auto()
     GREEN = auto()
-    # CUSTOM = auto()
 
 
 class TShirtStyle(StrEnum):

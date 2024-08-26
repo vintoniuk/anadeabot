@@ -14,7 +14,9 @@ class DesignChoice(BaseModel):
             If a user intents or chooses a specific T-shirt COLOR or to change
             their previous choice of COLOR. The color is the main color of a
             fabric a T-shirt is made of, that is the background color, not
-            taking into account color of decorations."""
+            taking into account color of decorations. If a user chooses some
+            CUSTOM color, not explicitly listed here, then extract it as a
+            string instead."""
     )
 
     size: Optional[options.TShirtSize] = Field(
@@ -62,7 +64,7 @@ class DesignChoice(BaseModel):
 def format_design(design: DesignChoice) -> str:
     formatted = []
     for attribute, choice in design:
-        formatted.append(f'{attribute}: {str(choice.value) if choice else str(choice)}')
+        formatted.append(f'{attribute}: {str(choice)}')
     return '\n'.join(formatted)
 
 
@@ -77,21 +79,21 @@ class UserIntent(BaseModel):
     If you cannot select the most appropriate intent from the list, leave all
     empty. DO NOT FORCE YOURSELF TO MAKE A CHOICE."""
 
-    choice: bool = Field(
+    decision: bool = Field(
         default=None,
-        description="""This is an intent of a user when a user wants to make a
+        description="""This is an intent of a human when a human wants to make a
                     design decision or choose a specific property of a T-shirt.
                     If a user expressed an intent to choose an option of some
                     T-shirt property, fire this flag.""")
 
-    # question: bool = Field(
-    #     default=None,
-    #     description="""If a human asks a question that can be answered from FAQ,
-    #                 for example about our offerings, available T-shirt design
-    #                 options, or other features of our platform.""")
+    question: bool = Field(
+        default=None,
+        description="""If a human asks a question for example about our offerings,
+                    available T-shirt attribute design options, or other features
+                    of our platform, fire this flag.""")
 
     confirm: bool = Field(
         default=None,
-        description="""If a human confirms or not confirms that design is correct and
-                    is or is not ready to make an order of a T-shirt, fire this flag."""
+        description="""If a human confirms that design is correct and is ready to
+                        make an order of a T-shirt, fire this flag."""
     )

@@ -30,21 +30,39 @@ choice_detection_prompt = ChatPromptTemplate.from_messages([
         not worry and just leave them empty, DO NOT MAKE UP VALUES.""")
 ])
 
+design_satisfaction_prompt = ChatPromptTemplate.from_messages([
+    MessagesPlaceholder('history'),
+    SystemMessage("""
+        Determine if a user is satisfied with their T-shirt design or do they want
+        to change some attribute choice or interested in more details. If they
+        completed their design and are satisfied then return True, else False.
+    """)
+])
+
 ask_for_confirmation_prompt = PromptTemplate.from_template("""
     Given the T-shirt design, present it to the user and ask the user if
     everything is correct and you can make an order of the T-shirt.
     You need to be completely sure that user decided to make an order, if
-    you are not sure, ask them explicitly.Do not ask anything else but
+    you are not sure, ask them explicitly. Do not ask anything else but
     a required questions.\n\nDesign:\n{design}
 """)
 
 ask_missing_attribute_prompt = PromptTemplate.from_template("""
-    You need to know all T-shirt attributes, but some are missing.
-    Up till now you have collected the following attributes:\n{design}\n
-    Suggest a user available options for attribute {attribute} and ask for
-    user's choice. Be smooth, and take into account above conversation.
+    You need to know all T-shirt attributes, but some are missing OR a user
+    wants to change their previously selected attribute options. Up till now
+    you have collected the following attributes:\n\n{design}\n\nDetermine a
+    user's intent and suggest a user available options for attribute {attribute}
+    and ask for user's choice. Be smooth, and take into account above conversation.
     And the most important. If a user already specified T-shirt attributes,
     DO NOT ASK THEM AGAIN. BE BRIEF, AND ASK FOR ONE ATTRIBUTE AT A TIME.
+""")
+
+user_is_not_satisfied_prompt = PromptTemplate.from_template("""
+    If a user wants to change their previously selected attribute options then
+    suggest then available options for the attribute or attributes they want to
+    change, and ask for their new choice. Up until now you have collected the
+    following attributes:\n\n{design}\n\nBe smooth, and take into account above
+    conversation.
 """)
 
 check_for_confirmation_prompt = ChatPromptTemplate.from_messages([

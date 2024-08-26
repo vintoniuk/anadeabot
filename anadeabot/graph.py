@@ -10,13 +10,15 @@ from langgraph.graph.state import CompiledStateGraph
 
 from anadeabot.tools import option_tools
 from anadeabot.schemas import DesignChoice, BooleanOutput, UserIntent, format_design
-from anadeabot.helpers import missing_attributes, first
+from anadeabot.helpers import missing_attributes
 from anadeabot.prompts import (
     choice_detection_prompt,
     ask_for_confirmation_prompt,
     ask_missing_attribute_prompt,
+    design_satisfaction_prompt,
+    user_is_not_satisfied_prompt,
     check_for_confirmation_prompt,
-    acknowledge_order_prompt
+    acknowledge_order_prompt,
 )
 
 TOOLS = [*option_tools]
@@ -43,13 +45,6 @@ class ConfigSchema(TypedDict):
     thread_id: str
 
 
-def intent_node(state: State, config: RunnableConfig):
-    llm = config['configurable']['llm']
-    structured = llm.with_structured_output(UserIntent)
-    intent = structured.invoke(state['messages'])
-    return first([i for i, present in intent if present])
-
-
 def choice_node(state: State, config: RunnableConfig):
     llm = config['configurable']['llm']
     structured = llm.with_structured_output(DesignChoice)
@@ -58,15 +53,28 @@ def choice_node(state: State, config: RunnableConfig):
     return {'design': design}
 
 
-def decision_node(state: State):
+def intent_node(state: State, config: RunnableConfig):
+    llm = config['configurable']['llm']
+    structured = llm.with_structured_output(UserIntent)
+    intent = structured.invoke(state['messages'])
+    detected = [i for i, detected in intent if detected]
+    return detected[0] if detected else 'agent'
+
+
+def decision_node(state: State, config: RunnableConfig):
+    llm = config['configurable']['llm']
+    structured = llm.with_structured_output(BooleanOutput)
+    chain = (design_satisfaction_prompt | structured)
+    user_is_satisfied = chain.invoke(state['messages'])
     design = format_design(state['design'])
-    if not missing_attributes(state['design']):
-        prompt = ask_for_confirmation_prompt.format(design=design)
-    else:
-        attribute = first(missing_attributes(state['design'])).upper()
+    if missing_attributes(state['design']):
+        attribute = missing_attributes(state['design'])[0].upper()
         prompt = ask_missing_attribute_prompt.format(design=design, attribute=attribute)
-    command = SystemMessage(prompt)
-    return {'messages': command}
+    elif not user_is_satisfied:
+        prompt = user_is_not_satisfied_prompt.format(design=design)
+    else:
+        prompt = ask_for_confirmation_prompt.format(design=design)
+    return {'messages': SystemMessage(prompt)}
 
 
 def confirm_node(state: State, config: RunnableConfig):
@@ -79,7 +87,7 @@ def confirm_node(state: State, config: RunnableConfig):
 
 
 def question_node(state: State, config: RunnableConfig):
-    pass
+    return state
 
 
 def agent(state: State, config: RunnableConfig):
@@ -96,8 +104,8 @@ def create_graph(checkpointer) -> CompiledStateGraph:
     graph_builder.add_node('decision', decision_node)
     graph_builder.add_node('question', question_node)
     graph_builder.add_node('tools', ToolNode(TOOLS))
-    graph_builder.add_conditional_edges(START, intent_node, ['choice', 'confirm', 'agent'])
-    graph_builder.add_edge('choice', 'decision')
+    graph_builder.add_edge(START, 'choice')
+    graph_builder.add_conditional_edges('choice', intent_node, ['decision', 'question', 'confirm', 'agent'])
     graph_builder.add_edge('decision', 'agent')
     graph_builder.add_edge('question', 'agent')
     graph_builder.add_edge('tools', 'agent')
