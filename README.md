@@ -70,4 +70,4 @@ Plan:
 
 - make custom color a real color and not just the word 'custom'
 
-<img src="file:///D:/Technology/data-science/anadeabot/docs/diagram-database.svg" title="Database Schema" alt="Database Schema" data-align="center">
+<img src="file:///D:/Technology/data-science/anadeabot/docs/diagram-database.svg" title="Database Schema" alt="Database Schema">

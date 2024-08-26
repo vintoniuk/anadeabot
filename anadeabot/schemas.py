@@ -61,13 +61,6 @@ class DesignChoice(BaseModel):
     )
 
 
-def format_design(design: DesignChoice) -> str:
-    formatted = []
-    for attribute, choice in design:
-        formatted.append(f'{attribute}: {str(choice)}')
-    return '\n'.join(formatted)
-
-
 class BooleanOutput(BaseModel):
     """Respond in a binary manner, like yes or no, true or false."""
 
@@ -79,21 +72,24 @@ class UserIntent(BaseModel):
     If you cannot select the most appropriate intent from the list, leave all
     empty. DO NOT FORCE YOURSELF TO MAKE A CHOICE."""
 
-    decision: bool = Field(
+    preference: bool = Field(
         default=None,
         description="""This is an intent of a human when a human wants to make a
                     design decision or choose a specific property of a T-shirt.
                     If a user expressed an intent to choose an option of some
                     T-shirt property, fire this flag.""")
 
+    decision: bool = Field(
+        default=None,
+        description="""If we previously asked a human to confirm their order, and
+                    they approve that they indeed ready to make an order of the
+                    T-shirt or the do not want to proceed with the order, that
+                    design is correct and they are ready to make an order or
+                    cancel an order of a T-shirt, fire this flag."""
+    )
+
     question: bool = Field(
         default=None,
-        description="""If a human asks a question for example about our offerings,
-                    available T-shirt attribute design options, or other features
-                    of our platform, fire this flag.""")
-
-    confirm: bool = Field(
-        default=None,
-        description="""If a human confirms that design is correct and is ready to
-                        make an order of a T-shirt, fire this flag."""
-    )
+        description="""If a HUMAN, not a system or AI, asks a question, for example,
+                    about our offerings, available T-shirt attribute design options,
+                    or other features of our platform, fire this flag.""")

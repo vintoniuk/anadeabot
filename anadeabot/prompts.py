@@ -1,4 +1,4 @@
-from langchain_core.prompts import PromptTemplate, MessagesPlaceholder, ChatPromptTemplate
+from langchain_core.prompts import PromptTemplate, MessagesPlaceholder, ChatPromptTemplate, SystemMessagePromptTemplate
 from langchain_core.messages import SystemMessage
 
 start_agent_system_prompt = SystemMessage("""
@@ -69,7 +69,9 @@ check_for_confirmation_prompt = ChatPromptTemplate.from_messages([
     MessagesPlaceholder('history'),
     SystemMessage("""
         Determine whether a user confirms their T-shirt design and is ready to make
-        an order. Respond in a binary manner: confirms - True, not confirms - False.
+        an order. If a user agrees to CONFIRM their order, say True. If a user does
+        not want to not confirm their order, say False. Respond in a binary manner:
+        confirms - True, not confirms - False.
     """)
 ])
 
@@ -78,5 +80,33 @@ acknowledge_order_prompt = ChatPromptTemplate.from_messages([
     SystemMessage("""
         The user has confirmed their order, so thank them for a T-shirt order, and
         tell them to let you know when they would like to design and order another one.
+    """)
+])
+
+cancel_order_prompt = ChatPromptTemplate.from_messages([
+    MessagesPlaceholder('history'),
+    SystemMessage("""
+        The user decided not to confirm their order, so say that you removed their
+        T-shirt design tell them to let you know when they would like to design and
+        order another one.
+    """)
+])
+
+question_refinement_prompt = ChatPromptTemplate.from_messages([
+    MessagesPlaceholder('history'),
+    SystemMessagePromptTemplate.from_template("""
+        Extract a user question from the previous conversation, refine it, make
+        it clear what the user wants to know, and tell us the refined version
+        of the question. DO NOT TRY TO ANSWER IT. DO NOT MAKE UP THING.
+    """)
+])
+
+question_faq_prompt = ChatPromptTemplate.from_messages([
+    MessagesPlaceholder('history'),
+    SystemMessagePromptTemplate.from_template("""
+        Given the previous conversation with a user's question and the most relevant
+        Frequently Asked Questions and their Answers, try to compose the most
+        appropriate answer to a user's question. Similar Frequently Asked Questions
+        and their corresponding Answers:\n{faq}\n\nUser question:\n{question}.
     """)
 ])

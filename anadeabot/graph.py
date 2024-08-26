@@ -1,16 +1,20 @@
 from typing import TypedDict, Annotated
+from operator import itemgetter
 
-from langchain_core.messages import SystemMessage, AnyMessage
-from langchain_core.runnables import RunnableConfig
+from langchain_core.messages import SystemMessage, AnyMessage, HumanMessage
+from langchain_core.runnables import RunnableConfig, RunnablePassthrough
 from langchain_core.language_models.chat_models import BaseChatModel
+from langchain_core.output_parsers import StrOutputParser
 
 from langgraph.graph import StateGraph, START, END, add_messages
 from langgraph.prebuilt import ToolNode, tools_condition
 from langgraph.graph.state import CompiledStateGraph
 
 from anadeabot.tools import option_tools
-from anadeabot.schemas import DesignChoice, BooleanOutput, UserIntent, format_design
+from anadeabot.schemas import DesignChoice, BooleanOutput, UserIntent
+from anadeabot.formatters import format_design, format_faq
 from anadeabot.helpers import missing_attributes
+from anadeabot.database import vectorstore
 from anadeabot.prompts import (
     choice_detection_prompt,
     ask_for_confirmation_prompt,
@@ -19,6 +23,9 @@ from anadeabot.prompts import (
     user_is_not_satisfied_prompt,
     check_for_confirmation_prompt,
     acknowledge_order_prompt,
+    cancel_order_prompt,
+    question_refinement_prompt,
+    question_faq_prompt
 )
 
 TOOLS = [*option_tools]
@@ -26,6 +33,8 @@ TOOLS = [*option_tools]
 
 def design_reducer(old, new):
     update = {}
+    if new is None:
+        return DesignChoice()
     for attribute, value in new:
         if value is not None:
             update[attribute] = getattr(new, attribute)
@@ -54,6 +63,8 @@ def choice_node(state: State, config: RunnableConfig):
 
 
 def intent_node(state: State, config: RunnableConfig):
+    if not isinstance(state['messages'][-1], HumanMessage):
+        return 'agent'
     llm = config['configurable']['llm']
     structured = llm.with_structured_output(UserIntent)
     intent = structured.invoke(state['messages'])
@@ -61,7 +72,7 @@ def intent_node(state: State, config: RunnableConfig):
     return detected[0] if detected else 'agent'
 
 
-def decision_node(state: State, config: RunnableConfig):
+def preference_node(state: State, config: RunnableConfig):
     llm = config['configurable']['llm']
     structured = llm.with_structured_output(BooleanOutput)
     chain = (design_satisfaction_prompt | structured)
@@ -77,17 +88,29 @@ def decision_node(state: State, config: RunnableConfig):
     return {'messages': SystemMessage(prompt)}
 
 
-def confirm_node(state: State, config: RunnableConfig):
+def decision_node(state: State, config: RunnableConfig):
     llm = config['configurable']['llm']
     structured = llm.with_structured_output(BooleanOutput)
     chain = (check_for_confirmation_prompt | structured)
     confirmation = chain.invoke(state['messages'])
-    response = (acknowledge_order_prompt | llm).invoke(state['messages'])
-    return {'confirmed': confirmation.value, 'messages': response}
+    if confirmation.value:
+        response = (acknowledge_order_prompt | llm).invoke(state['messages'])
+        update = {'design': state['design'], 'confirmed': True}
+    else:
+        response = (cancel_order_prompt | llm).invoke(state['messages'])
+        update = {'design': None, 'confirmed': False}
+    return {'messages': response} | update
 
 
 def question_node(state: State, config: RunnableConfig):
-    return state
+    llm = config['configurable']['llm']
+    retriever = vectorstore.as_retriever(search_kwargs={'k': 4})
+    chain = (
+            RunnablePassthrough
+            .assign(question=question_refinement_prompt | llm | StrOutputParser())
+            .assign(faq=itemgetter('question') | retriever | format_faq)
+            | question_faq_prompt | llm)
+    return {'messages': chain.invoke({'history': state['messages']})}
 
 
 def agent(state: State, config: RunnableConfig):
@@ -100,16 +123,16 @@ def create_graph(checkpointer) -> CompiledStateGraph:
     graph_builder = StateGraph(State, config_schema=ConfigSchema)
     graph_builder.add_node('agent', agent)
     graph_builder.add_node('choice', choice_node)
-    graph_builder.add_node('confirm', confirm_node)
     graph_builder.add_node('decision', decision_node)
+    graph_builder.add_node('preference', preference_node)
     graph_builder.add_node('question', question_node)
     graph_builder.add_node('tools', ToolNode(TOOLS))
     graph_builder.add_edge(START, 'choice')
-    graph_builder.add_conditional_edges('choice', intent_node, ['decision', 'question', 'confirm', 'agent'])
-    graph_builder.add_edge('decision', 'agent')
-    graph_builder.add_edge('question', 'agent')
+    graph_builder.add_conditional_edges('choice', intent_node, ['preference', 'question', 'decision', 'agent'])
+    graph_builder.add_edge('preference', 'agent')
+    graph_builder.add_edge('question', END)
     graph_builder.add_edge('tools', 'agent')
     graph_builder.add_conditional_edges('agent', tools_condition)
-    graph_builder.add_edge('confirm', END)
+    graph_builder.add_edge('decision', END)
     graph = graph_builder.compile(checkpointer=checkpointer)
     return graph
