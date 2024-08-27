@@ -15,13 +15,14 @@ class Settings(BaseSettings):
 
     ENVIRONMENT: Environment
 
+    API_ID: str
+    API_HASH: str
+    BOT_TOKEN: str
+
     OPENAI_API_KEY: str
     POSTGRES_URI: str
 
     # LANGCHAIN_TRACING_V2: str
     # LANGCHAIN_API_KEY: str
-    # MONGODB_URI: str
-    # PINECONE_API_KEY: str
-
 
 settings = Settings(_env_file='.env')

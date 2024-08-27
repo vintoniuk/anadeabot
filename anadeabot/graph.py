@@ -14,7 +14,7 @@ from anadeabot.tools import option_tools
 from anadeabot.schemas import DesignChoice, BooleanOutput, UserIntent
 from anadeabot.formatters import format_design, format_faq
 from anadeabot.helpers import missing_attributes
-from anadeabot.database import vectorstore
+from anadeabot import database
 from anadeabot.prompts import (
     choice_detection_prompt,
     ask_for_confirmation_prompt,
@@ -95,16 +95,17 @@ def decision_node(state: State, config: RunnableConfig):
     confirmation = chain.invoke(state['messages'])
     if confirmation.value:
         response = (acknowledge_order_prompt | llm).invoke(state['messages'])
-        update = {'design': state['design'], 'confirmed': True}
+        session = config['configurable']['session']
+        user = database.get_user(config['configurable']['thread_id'], session=session)
+        database.place_order(user, state['design'], session=session)
     else:
         response = (cancel_order_prompt | llm).invoke(state['messages'])
-        update = {'design': None, 'confirmed': False}
-    return {'messages': response} | update
+    return {'messages': response, 'design': None}
 
 
 def question_node(state: State, config: RunnableConfig):
     llm = config['configurable']['llm']
-    retriever = vectorstore.as_retriever(search_kwargs={'k': 4})
+    retriever = database.vectorstore.as_retriever(search_kwargs={'k': 4})
     chain = (
             RunnablePassthrough
             .assign(question=question_refinement_prompt | llm | StrOutputParser())

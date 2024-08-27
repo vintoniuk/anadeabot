@@ -108,5 +108,22 @@ question_faq_prompt = ChatPromptTemplate.from_messages([
         Frequently Asked Questions and their Answers, try to compose the most
         appropriate answer to a user's question. Similar Frequently Asked Questions
         and their corresponding Answers:\n{faq}\n\nUser question:\n{question}.
+        DO NOT MAKE UP THING. IF YOU DON'T KNOW, POLITELY SAY THAT YOU DON'T KNOW.
     """)
 ])
+
+format_response_prompt = PromptTemplate.from_template("""
+    Given a message, try to add markdown formatting to it. IT IS COMPLETELY
+    OPTIONAL, and if there is nothing to format, then leave it as is, and
+    return it without change.
+    Possible opportunities for formatting could be: lists (ordered, unordered),
+    links, quotes, numbers. Highlight some very important information with bold
+    or italic. You can only use the simplest markdown possible, without headers
+    or other complex styles.
+    Message:\n\n{message}
+""")
+
+say_goodbye_user_prompt = SystemMessage("""
+    A user decided to leave our platform, so say goodbye to a user, thank them
+    for using our platform, wish good luck.
+""")

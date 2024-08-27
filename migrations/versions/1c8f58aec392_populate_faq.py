@@ -11,7 +11,7 @@ import csv
 from alembic import op
 import sqlalchemy as sa
 
-from anadeabot.database import create_faq, FAQ
+from anadeabot.database import create_faq, FAQ, vectorstore
 
 # revision identifiers, used by Alembic.
 revision: str = '1c8f58aec392'
@@ -23,7 +23,7 @@ depends_on: Union[str, Sequence[str], None] = None
 def upgrade() -> None:
     with open('data/qa.csv', newline='') as file:
         data = csv.DictReader[FAQ](file)
-        create_faq([qa for qa in data])
+        create_faq([qa for qa in data], vectorstore)
 
 
 def downgrade() -> None:

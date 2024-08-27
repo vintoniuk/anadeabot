@@ -9,6 +9,7 @@ venv/
 ENV/
 
 *.ipynb
+*.session
 
 # Installer logs
 pip-log.txt

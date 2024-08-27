@@ -1,6 +1,7 @@
 from typing import TypedDict
 
 from langchain_core.documents import Document
+from langchain_core.vectorstores import VectorStore
 from langchain_openai.embeddings import OpenAIEmbeddings
 from langchain_postgres import PGVector
 
@@ -10,7 +11,7 @@ from sqlalchemy.orm import Session
 
 from anadeabot.settings import settings
 from anadeabot.schemas import DesignChoice
-from anadeabot.models import User, Order
+from anadeabot.models import User, Order, Request
 
 engine = create_engine(settings.POSTGRES_URI)
 
@@ -29,37 +30,50 @@ vectorstore = PGVector(
 )
 
 
+def create_user(telegram_id: str | int, *, session: Session) -> User:
+    user = User(telegram_id=telegram_id)
+    session.add(user)
+    session.flush()
+    return user
+
+
+def get_user(telegram_id: str | int, *, session: Session) -> User | None:
+    return session.scalar(sa.select(User).filter_by(telegram_id=str(telegram_id)))
+
+
+def delete_user(user: User, *, session: Session) -> None:
+    session.delete(user)
+    session.flush()
+
+
+def place_order(user: User, design: DesignChoice, *, session: Session) -> Order:
+    order = Order(
+        user_id=user.id,
+        color=design.color,
+        size=design.size,
+        style=design.style,
+        gender=design.gender,
+        printing=design.printing
+    )
+    session.add(order)
+    session.flush()
+    return order
+
+
+def make_request(user: User, details: str, *, session: Session) -> Request:
+    request = Request(user_id=user.id, details=details)
+    session.add(request)
+    session.flush()
+    return request
+
+
 class FAQ(TypedDict):
     question: str
     answer: str
 
 
-def create_faq(questions_and_answers: list[FAQ]) -> list[str]:
-    documents = [Document(qa['question'], metadata={'answer': qa['answer']}) for qa in questions_and_answers]
+def create_faq(questions_and_answers: list[FAQ], vectorstore: VectorStore) -> list[str]:
+    documents = [
+        Document(qa['question'], metadata={'answer': qa['answer']}) for qa in questions_and_answers
+    ]
     return vectorstore.add_documents(documents)
-
-
-def create_user(telegram_id: int, *, session: Session) -> User:
-
-        user = User(telegram_id=telegram_id)
-        session.add(user)
-        return user
-
-
-def get_user(telegram_id: int) -> User | None:
-    with Session(engine, expire_on_commit=False) as session, session.begin():
-        return session.scalar(sa.select(User).filter_by(telegram_id=telegram_id))
-
-
-def place_order(user: User, design: DesignChoice):
-    with Session(engine, expire_on_commit=False) as session, session.begin():
-        order = Order(
-            user_id=user.id,
-            color=design.color,
-            size=design.size,
-            style=design.style,
-            gender=design.gender,
-            printing=design.printing
-        )
-        session.add(order)
-        return order
