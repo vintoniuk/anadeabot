@@ -116,11 +116,10 @@ format_response_prompt = PromptTemplate.from_template("""
     Given a message, try to add markdown formatting to it. IT IS COMPLETELY
     OPTIONAL, and if there is nothing to format, then leave it as is, and
     return it without change.
-    Possible opportunities for formatting could be: lists (ordered, unordered),
-    links, quotes, numbers. Highlight some very important information with bold
-    or italic. You can only use the simplest markdown possible, without headers
-    or other complex styles.
-    Message:\n\n{message}
+    Possible formatting styles are: **bold**, *italic*, `monospace`, ~~strike~~,
+    or <u>underline</u>. Highlight some very important information with bold
+    or italic, or something like that. Also you can highlight numbers in an
+    ordered list.\n\nMessage:\n\n{message}
 """)
 
 say_goodbye_user_prompt = SystemMessage("""

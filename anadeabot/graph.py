@@ -25,7 +25,8 @@ from anadeabot.prompts import (
     acknowledge_order_prompt,
     cancel_order_prompt,
     question_refinement_prompt,
-    question_faq_prompt
+    question_faq_prompt,
+    format_response_prompt
 )
 
 TOOLS = [*option_tools]
@@ -114,6 +115,14 @@ def question_node(state: State, config: RunnableConfig):
     return {'messages': chain.invoke({'history': state['messages']})}
 
 
+def format_node(state: State, config: RunnableConfig):
+    llm = config['configurable']['llm']
+    chain = (format_response_prompt | llm)
+    last_message = state['messages'].pop()
+    response = chain.invoke({'message': last_message})
+    return {'messages': response}
+
+
 def agent(state: State, config: RunnableConfig):
     llm = config['configurable']['llm']
     llm_with_tools = llm.bind_tools(TOOLS)
@@ -128,6 +137,7 @@ def create_graph(checkpointer) -> CompiledStateGraph:
     graph_builder.add_node('preference', preference_node)
     graph_builder.add_node('question', question_node)
     graph_builder.add_node('tools', ToolNode(TOOLS))
+    # graph_builder.add_node('format', format_node)
     graph_builder.add_edge(START, 'choice')
     graph_builder.add_conditional_edges('choice', intent_node, ['preference', 'question', 'decision', 'agent'])
     graph_builder.add_edge('preference', 'agent')
