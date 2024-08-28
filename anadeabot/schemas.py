@@ -70,26 +70,10 @@ class BooleanOutput(BaseModel):
 
 
 class UserIntent(BaseModel):
-    """Determine the most probable intent of a user. Try to select only one.
-    If you cannot select the most appropriate intent from the list, leave all
-    empty. DO NOT FORCE YOURSELF TO MAKE A CHOICE."""
+    """Determine the most probable intent of a user. If you can select any of them,
+     leave all empty. DO NOT FORCE YOURSELF TO MAKE A CHOICE."""
 
-    struggle: bool = Field(
-        default=None,
-        description="""Given the above conversation, determine whether a user
-                    has faced some obstacle, or is struggling trying to accomplish
-                    some goal. You can take into account user's tone, expressions,
-                    number of repetitions of a question, or this sort of behaviour.""")
-
-    help: bool = Field(
-        default=None,
-        description="""Given the above conversation, if we previously suggested
-                    a user to call customer support, and now the user made a
-                    decision whether to request help from support, then fire
-                    this flag."""
-    )
-
-    choice: bool = Field(
+    preference: bool = Field(
         default=None,
         description="""This is an intent of a human when a human wants to make a
                     design decision or choose a specific property of a T-shirt.
@@ -111,6 +95,39 @@ class UserIntent(BaseModel):
                     asks a question, for example, about our offerings, available
                     T-shirt attribute design options, or other features of our platform,
                     fire this flag.""")
+
+    struggle: bool = Field(
+        default=None,
+        description="""Given the above conversation, determine whether a user
+                    has faced some obstacle, or is struggling trying to accomplish
+                    some goal. You can take into account user's tone, expressions,
+                    number of repetitions of a question, or this sort of behaviour.""")
+
+    help: bool = Field(
+        default=None,
+        description="""Given the above conversation, if we previously suggested
+                    a user to make a request to customer support, and now the
+                    user agreed to send a request for help from support,
+                    then fire this flag.""")
+
+    request: bool = Field(
+        default=None,
+        description="""Given the above conversation, if we did not ask a user about
+                    contacting support, but a user expressed desire to make a request
+                    to support, to tell them something, or to ask a question.""")
+
+    agent: bool = Field(
+        default=None,
+        description="""In any other case, where a user's intent is something else."""
+    )
+
+
+class ExpectedIntent(BaseModel):
+    struggle: int = 0
+    help: int = 0
+    choice: int = 0
+    decision: int = 0
+    question: int = 0
 
 
 class SupportRequest(BaseModel):

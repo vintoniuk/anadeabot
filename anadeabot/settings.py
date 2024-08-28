@@ -20,6 +20,7 @@ class Settings(BaseSettings):
     BOT_TOKEN: str
 
     OPENAI_API_KEY: str
+    GROQ_API_KEY: str
     POSTGRES_URI: str
 
     # LANGCHAIN_TRACING_V2: str

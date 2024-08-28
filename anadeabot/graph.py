@@ -12,11 +12,17 @@ from langgraph.prebuilt import ToolNode
 from langgraph.graph.state import CompiledStateGraph
 
 from anadeabot.tools import option_tools
-from anadeabot.schemas import DesignChoice, BooleanOutput, UserIntent, SupportRequest
 from anadeabot.formatters import format_design, format_faq, format_grounding
 from anadeabot.database import faq_vectorstore, grounding_vectorstore
-from anadeabot.helpers import missing_attributes
+from anadeabot.helpers import missing_attributes, resolve_intent
 from anadeabot import database
+from anadeabot.schemas import (
+    DesignChoice,
+    BooleanOutput,
+    UserIntent,
+    SupportRequest,
+    ExpectedIntent
+)
 from anadeabot.prompts import (
     choice_detection_prompt,
     intent_detection_prompt,
@@ -31,7 +37,9 @@ from anadeabot.prompts import (
     cancel_design_prompt,
     question_refinement_prompt,
     question_faq_prompt,
-    format_response_prompt
+    format_response_prompt,
+    acknowledge_request_prompt,
+    intent_support_prompt
 )
 
 TOOLS = [*option_tools]
@@ -52,7 +60,6 @@ def design_reducer(old, new):
 class State(TypedDict):
     messages: Annotated[list[AnyMessage], add_messages]
     design: Annotated[DesignChoice, design_reducer]
-    expected_intent: dict[str, int]
     facts: list[Document]
 
 
@@ -84,36 +91,19 @@ def grounding_node(state: State):
     return {'facts': documents}
 
 
-# def struggle_node(state: State, config: RunnableConfig):
-#     if not isinstance(state['messages'][-1], HumanMessage):
-#         return 'choice'
-#     llm = config['configurable']['llm']
-#     structured = llm.with_structured_output(BooleanOutput)
-#     chain = (struggle_detection_prompt | structured)
-#     struggling = chain.invoke({'history': state['messages']})
-#     print(struggling)
-#     if struggling.value:
-#         return 'details'
-#     else:
-#         return 'choice'
-
-
 def struggle_node(state: State, config: RunnableConfig):
-    print('++++++++++++++')
     llm = config['configurable']['llm']
     chain = (struggle_support_prompt | llm)
     response = chain.invoke({'history': state['messages']})
     return {'messages': response}
 
 
-def help_node(state: State, config: RunnableConfig):
+def choice_node(state: State, config: RunnableConfig):
     llm = config['configurable']['llm']
-    structured = llm.with_structured_output(SupportRequest)
-    chain = (struggle_details_prompt | structured)
-    request = chain.invoke({'history': state['messages']})
-    print(request.details)
-    print('---------------------------------------------')
-    return {'messages': []}
+    structured = llm.with_structured_output(DesignChoice)
+    chain = (choice_detection_prompt | structured)
+    design = chain.invoke({'history': state['messages']})
+    return {'design': design}
 
 
 def intent_node(state: State, config: RunnableConfig):
@@ -127,15 +117,8 @@ def intent_node(state: State, config: RunnableConfig):
         'grounding': format_grounding(state['facts'])
     })
     detected = [i for i, detected in intent if detected]
+    print('Intent:', detected)
     return detected[0] if detected else 'agent'
-
-
-def choice_node(state: State, config: RunnableConfig):
-    llm = config['configurable']['llm']
-    structured = llm.with_structured_output(DesignChoice)
-    chain = (choice_detection_prompt | structured)
-    design = chain.invoke({'history': state['messages']})
-    return {'design': design}
 
 
 def preference_node(state: State, config: RunnableConfig):
@@ -182,6 +165,24 @@ def question_node(state: State, config: RunnableConfig):
     })}
 
 
+def help_node(state: State, config: RunnableConfig):
+    llm = config['configurable']['llm']
+    structured = llm.with_structured_output(SupportRequest)
+    chain = (struggle_details_prompt | structured)
+    request = chain.invoke({'history': state['messages']})
+    session = config['configurable']['session']
+    user = database.get_user(config['configurable']['thread_id'], session=session)
+    database.make_request(user, request.details, session=session)
+    return {'messages': [acknowledge_request_prompt]}
+
+
+def request_node(state: State, config: RunnableConfig):
+    llm = config['configurable']['llm']
+    chain = (intent_support_prompt | llm)
+    response = chain.invoke({'history': state['messages']})
+    return {'messages': response}
+
+
 def format_node(state: State, config: RunnableConfig):
     llm = config['configurable']['llm']
     chain = (format_response_prompt | llm)
@@ -208,12 +209,14 @@ def create_graph(checkpointer) -> CompiledStateGraph:
     graph_builder.add_node('question', question_node)
     graph_builder.add_node('tools', ToolNode(TOOLS))
     graph_builder.add_node('format', format_node)
-    graph_builder.add_edge(START, 'grounding')
+    graph_builder.add_node('request', request_node)
+    graph_builder.add_edge(START, 'choice')
+    graph_builder.add_edge('choice', 'grounding')
     graph_builder.add_conditional_edges('grounding', intent_node,
-                                        ['choice', 'decision', 'question', 'struggle', 'help', 'agent'])
+                                        ['preference', 'decision', 'question', 'struggle', 'help', 'request', 'agent'])
+    graph_builder.add_edge('request', END)
     graph_builder.add_edge('struggle', END)
-    graph_builder.add_edge('help', 'format')
-    graph_builder.add_edge('choice', 'preference')
+    graph_builder.add_edge('help', 'agent')
     graph_builder.add_edge('preference', 'agent')
     graph_builder.add_edge('question', 'format')
     graph_builder.add_edge('tools', 'agent')

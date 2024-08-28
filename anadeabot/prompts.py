@@ -35,7 +35,8 @@ intent_detection_prompt = ChatPromptTemplate.from_messages([
     MessagesPlaceholder('history'),
     SystemMessagePromptTemplate.from_template("""
         Given the above conversation and ground truth knowledge, try to detect
-        a user's intent at the moment.\n\nGround truth:\n{grounding}
+        a user's intent at the moment. If you are not sure in exactly one intent
+        of a user, select several of them.\n\nGround truth:\n{grounding}
     """)
 ])
 
@@ -116,22 +117,13 @@ question_faq_prompt = ChatPromptTemplate.from_messages([
         Given the previous conversation with a user's question and the most
         relevant Frequently Asked Questions and their Answers, try to compose
         the most appropriate answer to a user's question. You can also rely on
-        our ground truth facts as a source of answers.\nGround truth facts:
-        \n{facts}\n\nSimilar Frequently Asked Questions and their corresponding
-        Answers:\n{faq}\n\nUser question:\n{question}.\n\nDO NOT MAKE UP THING.
-        IF YOU DON'T KNOW, POLITELY SAY THAT YOU DON'T KNOW.
+        our ground truth facts as a source of answers. NEVER TRY TO MAKE UP THINGS,
+        use only information from your conversation, ground truth facts, or FAQ.
+        \nGround truth facts:\n{facts}\n\nSimilar Frequently Asked Questions and
+        their corresponding Answers:\n{faq}\n\nUser question:\n{question}.\n\nDO
+        NOT MAKE UP THING. IF YOU DON'T KNOW, POLITELY SAY THAT YOU DON'T KNOW.
     """)
 ])
-
-# struggle_detection_prompt = ChatPromptTemplate.from_messages([
-#     MessagesPlaceholder('history'),
-#     SystemMessagePromptTemplate.from_template("""
-#         Given the above conversation, determine whether a user has faced some
-#         obstacle, or is struggling trying to accomplish some goal. You can
-#         take into account user's tone, expressions, number of repetitions
-#         of a question, or this sort of behaviour.
-#     """)
-# ])
 
 struggle_support_prompt = ChatPromptTemplate.from_messages([
     MessagesPlaceholder('history'),
@@ -154,13 +146,22 @@ struggle_details_prompt = ChatPromptTemplate.from_messages([
     """)
 ])
 
-# grounding_prompt = ChatPromptTemplate.from_messages([
-#     MessagesPlaceholder('history'),
-#     SystemMessage("""
-#         Look at the above conversation and extract the last user thought from it.
-#         DO NOT TRY TO ANSWER IT OR DO ANYTHING ELSE. DO NOT MAKE UP THING.
-#     """)
-# ])
+acknowledge_request_prompt = SystemMessage("""
+    Tell the user that a support request of a user has been sent to our
+    support team and that they should wait for a response, and thank them
+    for waiting.
+""")
+
+intent_support_prompt = ChatPromptTemplate.from_messages([
+    MessagesPlaceholder('history'),
+    SystemMessage("""
+        A user decided to call support team. Given the above conversation,
+        try to determine what a user wants to ask support about, then
+        clarify why a user to make a support call about. If a user already
+        said why do they want to make a call, do not ask again, just rephrase
+        and present the user's request to a user to clarify if it is correct.
+    """)
+])
 
 format_response_prompt = ChatPromptTemplate.from_messages([
     SystemMessagePromptTemplate.from_template("""
