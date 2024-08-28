@@ -1,10 +1,3 @@
-"""add memory
-
-Revision ID: 4d3f81bcfcc1
-Revises: 1c8f58aec392
-Create Date: 2024-08-27 14:57:24.144900
-
-"""
 from typing import Sequence, Union
 
 from alembic import op

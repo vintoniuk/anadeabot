@@ -21,11 +21,19 @@ embeddings = OpenAIEmbeddings(
     dimensions=settings.dimensionality
 )
 
-vectorstore = PGVector(
+faq_vectorstore = PGVector(
     embeddings=embeddings,
     connection=settings.POSTGRES_URI,
     embedding_length=settings.dimensionality,
     collection_name='faq',
+    use_jsonb=True,
+)
+
+grounding_vectorstore = PGVector(
+    embeddings=embeddings,
+    connection=settings.POSTGRES_URI,
+    embedding_length=settings.dimensionality,
+    collection_name='grounding',
     use_jsonb=True,
 )
 
@@ -72,8 +80,12 @@ class FAQ(TypedDict):
     answer: str
 
 
-def create_faq(questions_and_answers: list[FAQ], vectorstore: VectorStore) -> list[str]:
+def create_faq(questions_and_answers: list[FAQ]) -> list[str]:
     documents = [
         Document(qa['question'], metadata={'answer': qa['answer']}) for qa in questions_and_answers
     ]
-    return vectorstore.add_documents(documents)
+    return faq_vectorstore.add_documents(documents)
+
+
+def add_facts(documents: list[str]) -> list[str]:
+    return grounding_vectorstore.add_documents([Document(d) for d in documents])

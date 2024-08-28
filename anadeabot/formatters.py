@@ -19,3 +19,10 @@ def format_faq(documents: Iterable[Document]) -> str:
         answer = d.metadata['answer']
         faq.append(f'{i + 1}. Question: {question} Answer: {answer}')
     return '\n'.join(faq)
+
+
+def format_grounding(documents: Iterable[Document]) -> str:
+    formatted = []
+    for i, document in enumerate(documents):
+        formatted.append(f'{i + 1}. {document.page_content}')
+    return '\n'.join(formatted)

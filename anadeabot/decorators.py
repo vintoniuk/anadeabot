@@ -1,3 +1,6 @@
+import functools
+
+
 def registry():
     functions = []
 
