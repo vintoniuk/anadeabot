@@ -33,3 +33,7 @@ A flow of processing of user messages is illustrated on a diagram below. The ima
 The entity-relationship diagram below illustrates the structure of the database. Other tables for vector stores and chat history are managed by LangChain and LangGraph respectively. When a user first starts a conversation with the bot, a new record is created in the `USER` table. All orders and requests are stored in corresponding tables and linked to a user. When a user deletes a bot, all its data is deleted as well, including conversation history.
 
 <p align="center"><img src="./docs/database.svg" alt="Database" align="center"></p>
+
+##### Repository
+
+A main module is `graph`, it contains the application logic. `handlers` module contains Telegram message handlers. `prompts` and `schemas `modules contain LLM prompts and Pydantic schemas for structured output respectively. `tools` module contains T-shirt attribute recommendation tools. `options` is the possible attribute options. `models` contains ORM models and `database` module contains database queries. `middleware` is a wrapper for message handlers to provide automatic request context. `settings` contains application configuration.
