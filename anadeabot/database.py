@@ -1,7 +1,6 @@
 from typing import TypedDict
 
 from langchain_core.documents import Document
-from langchain_core.vectorstores import VectorStore
 from langchain_openai.embeddings import OpenAIEmbeddings
 from langchain_postgres import PGVector
 

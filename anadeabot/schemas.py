@@ -118,7 +118,8 @@ class UserIntent(BaseModel):
 
     agent: bool = Field(
         default=None,
-        description="""In any other case, where a user's intent is something else."""
+        description="""In any other case, where a user just want to talk, in a free
+                    conversation."""
     )
 
 

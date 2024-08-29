@@ -10,6 +10,7 @@ ENV/
 
 *.ipynb
 *.session
+deploy.sh
 
 # Installer logs
 pip-log.txt

@@ -117,7 +117,6 @@ def intent_node(state: State, config: RunnableConfig):
         'grounding': format_grounding(state['facts'])
     })
     detected = [i for i, detected in intent if detected]
-    print('Intent:', detected)
     return detected[0] if detected else 'agent'
 
 

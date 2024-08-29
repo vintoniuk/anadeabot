@@ -168,10 +168,10 @@ format_response_prompt = ChatPromptTemplate.from_messages([
         Given a message, try to add markdown formatting to it. IT IS COMPLETELY
         OPTIONAL, and if there is nothing to format, then leave it as is, and
         return it without change.
-        Possible formatting styles are: **bold**, __italic__, `monospace`,
-        ~~strike~~, or --underline--. Highlight some very important information
-        with bold or italic, or something like that. Also you can highlight
-        numbers in an ordered list.\n\nMessage:\n\n{message}
+        POSSIBLE formatting styles are: **bold**, __italic__, `monospace`,
+        ~~strike~~, or --underline--. USE ONLY THESE AND NOTHING MORE. Highlight
+        some very important information with bold or italic, or something like that.
+        Also you can highlight numbers in an ordered list.\n\nMessage:\n\n{message}
     """)
 ])
 
