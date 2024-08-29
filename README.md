@@ -30,6 +30,6 @@ A flow of processing of user messages is illustrated on a diagram below. The ima
 
 <p align="center"><img src="./docs/graph.png" alt="Graph"></p>
 
-The entity-relationship diagram below illustrates the structure of the database. Other tables for vector stores and chat history are managed by LangChain and LangGraph respectively.. When a user first starts a conversation with the bot, a new record is created in the `USER` table. All orders and requests are stored in corresponding tables and linked to a user. When a user deletes a bot, all its data is deleted as well, including conversation history.
+The entity-relationship diagram below illustrates the structure of the database. Other tables for vector stores and chat history are managed by LangChain and LangGraph respectively. When a user first starts a conversation with the bot, a new record is created in the `USER` table. All orders and requests are stored in corresponding tables and linked to a user. When a user deletes a bot, all its data is deleted as well, including conversation history.
 
 <p align="center"><img src="./docs/database.svg" alt="Database" align="center"></p>
