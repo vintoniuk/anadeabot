@@ -6,6 +6,7 @@ from langchain_core.runnables import RunnableConfig, RunnablePassthrough
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.documents import Document
+from langchain_core.pydantic_v1 import ValidationError
 
 from langgraph.graph import StateGraph, START, END, add_messages
 from langgraph.prebuilt import ToolNode
@@ -27,7 +28,7 @@ from anadeabot.prompts import (
     choice_detection_prompt,
     intent_detection_prompt,
     struggle_support_prompt,
-    struggle_details_prompt,
+    support_details_prompt,
     ask_for_confirmation_prompt,
     ask_missing_attribute_prompt,
     design_satisfaction_prompt,
@@ -39,7 +40,8 @@ from anadeabot.prompts import (
     question_faq_prompt,
     format_response_prompt,
     acknowledge_request_prompt,
-    intent_support_prompt
+    check_for_request_details,
+    clarify_details_prompt
 )
 
 TOOLS = [*option_tools]
@@ -102,7 +104,10 @@ def choice_node(state: State, config: RunnableConfig):
     llm = config['configurable']['llm']
     structured = llm.with_structured_output(DesignChoice)
     chain = (choice_detection_prompt | structured)
-    design = chain.invoke({'history': state['messages']})
+    try:
+        design = chain.invoke({'history': state['messages']})
+    except ValidationError:
+        return {'design': DesignChoice()}
     return {'design': design}
 
 
@@ -164,22 +169,23 @@ def question_node(state: State, config: RunnableConfig):
     })}
 
 
-def help_node(state: State, config: RunnableConfig):
+def support_node(state: State, config: RunnableConfig):
     llm = config['configurable']['llm']
-    structured = llm.with_structured_output(SupportRequest)
-    chain = (struggle_details_prompt | structured)
-    request = chain.invoke({'history': state['messages']})
-    session = config['configurable']['session']
-    user = database.get_user(config['configurable']['thread_id'], session=session)
-    database.make_request(user, request.details, session=session)
-    return {'messages': [acknowledge_request_prompt]}
-
-
-def request_node(state: State, config: RunnableConfig):
-    llm = config['configurable']['llm']
-    chain = (intent_support_prompt | llm)
-    response = chain.invoke({'history': state['messages']})
-    return {'messages': response}
+    structured = llm.with_structured_output(BooleanOutput)
+    chain = (check_for_request_details | structured)
+    has_details = chain.invoke({'history': state['messages']})
+    print(has_details.value)
+    if has_details.value:
+        structured = llm.with_structured_output(SupportRequest)
+        chain = (support_details_prompt | structured)
+        request = chain.invoke({'history': state['messages']})
+        print(request.details)
+        session = config['configurable']['session']
+        user = database.get_user(config['configurable']['thread_id'], session=session)
+        database.make_request(user, request.details, session=session)
+        return {'messages': acknowledge_request_prompt}
+    else:
+        return {'messages': clarify_details_prompt}
 
 
 def format_node(state: State, config: RunnableConfig):
@@ -201,21 +207,19 @@ def create_graph(checkpointer) -> CompiledStateGraph:
     graph_builder.add_node('agent', agent)
     graph_builder.add_node('grounding', grounding_node)
     graph_builder.add_node('struggle', struggle_node)
-    graph_builder.add_node('help', help_node)
     graph_builder.add_node('decision', decision_node)
     graph_builder.add_node('choice', choice_node)
     graph_builder.add_node('preference', preference_node)
     graph_builder.add_node('question', question_node)
     graph_builder.add_node('tools', ToolNode(TOOLS))
     graph_builder.add_node('format', format_node)
-    graph_builder.add_node('request', request_node)
+    graph_builder.add_node('support', support_node)
     graph_builder.add_edge(START, 'choice')
     graph_builder.add_edge('choice', 'grounding')
     graph_builder.add_conditional_edges('grounding', intent_node,
-                                        ['preference', 'decision', 'question', 'struggle', 'help', 'request', 'agent'])
-    graph_builder.add_edge('request', END)
+                                        ['preference', 'decision', 'question', 'struggle', 'support', 'agent'])
+    graph_builder.add_edge('support', 'agent')
     graph_builder.add_edge('struggle', END)
-    graph_builder.add_edge('help', 'agent')
     graph_builder.add_edge('preference', 'agent')
     graph_builder.add_edge('question', 'format')
     graph_builder.add_edge('tools', 'agent')

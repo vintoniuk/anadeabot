@@ -20,7 +20,7 @@ The stack the app is built with is:
 
 - LangChain for RAG and model interactions
 
-- Pyrogram as an interface and API of an application
+- Pyrogram as an interface and API of the application
 
 - PostgreSQL as a primary database and a vectorstore
 

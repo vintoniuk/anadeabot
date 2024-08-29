@@ -22,13 +22,14 @@ greeting_prompt = SystemMessage("""
 choice_detection_prompt = ChatPromptTemplate.from_messages([
     MessagesPlaceholder('history'),
     SystemMessage(
-        """If a user made a choice of some of the T-shirt design attributes, or
-        decided to change their mind about previously chosen attribute options,
-        then try to infer their values. If a user is not interested in a specific
-        attribute, or is ready to go with an arbitrary option, choose an option
-        for that attribute on your own. If some attributes are not present, do
-        not worry and just leave them empty, DO NOT MAKE UP VALUES. ALL ATTRIBUTES
-        ARE OPTIONAL, if a users specified unavailable options, LEAVE IT EMPTY.""")
+        """Given the above conversation, if a user made a choice of some of the
+        T-shirt design attributes, or decided to change their mind about previously
+        chosen attribute options, then try to infer their values. If a user is not
+        interested in a specific attribute, or is ready to go with an arbitrary option,
+        choose an option for that attribute on your own. If some attributes are not
+        present, do not worry and just leave them NONE, DO NOT MAKE UP VALUES.
+        ALL ATTRIBUTES ARE OPTIONAL, if a users specified unavailable options, LEAVE IT
+        EMPTY.""")
 ])
 
 intent_detection_prompt = ChatPromptTemplate.from_messages([
@@ -136,15 +137,28 @@ struggle_support_prompt = ChatPromptTemplate.from_messages([
     """)
 ])
 
-struggle_details_prompt = ChatPromptTemplate.from_messages([
+check_for_request_details = ChatPromptTemplate.from_messages([
     MessagesPlaceholder('history'),
     SystemMessage("""
-        A user wants to request help from customer support, so given the above
-        conversation, extract the details of user's intent for the customer
-        support. For example, what was user's question, or the problem they
-        faced. Compose a self-contained summary of essence of user's request.
+        Determine if a user specified that they have a problem, issue or a question,
+        which they want to tell the support team.
     """)
 ])
+
+support_details_prompt = ChatPromptTemplate.from_messages([
+    MessagesPlaceholder('history'),
+    SystemMessage("""
+        Determine the reason why a user wants to make a request to customer
+        support from the above conversation. Try to extract the details of
+        user's intent for the customer support. Compose a self-contained summary
+        of essence of user's request of AT LEAST 3 sentences. User MUST specify
+        precisely WHAT they want or need help WITH.
+    """)
+])
+
+clarify_details_prompt = SystemMessage("""
+    Ask a user to explain why do they want to call a support team.
+""")
 
 acknowledge_request_prompt = SystemMessage("""
     Tell the user that a support request of a user has been sent to our
@@ -155,11 +169,11 @@ acknowledge_request_prompt = SystemMessage("""
 intent_support_prompt = ChatPromptTemplate.from_messages([
     MessagesPlaceholder('history'),
     SystemMessage("""
-        A user decided to call support team. Given the above conversation,
-        try to determine what a user wants to ask support about, then
-        clarify why a user to make a support call about. If a user already
-        said why do they want to make a call, do not ask again, just rephrase
-        and present the user's request to a user to clarify if it is correct.
+        A user decided to call a support team. Say something like: "Okay, lets
+        now call the support team". Then if the user previously specified why
+        they want to call the support team, repeat what they want and ask them to
+        clarify if everything is correct. If a user did not yet specified why
+        do they want support, then ask them why do they want to make a request.
     """)
 ])
 

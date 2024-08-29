@@ -6,7 +6,7 @@ from anadeabot import options
 
 
 class DesignChoice(BaseModel):
-    """A set of user T-shirt attribute design choices."""
+    """A set of user T-shirt attribute design choices. EVERY FIELD IS OPTIONAL."""
 
     color: Optional[options.TShirtColor | str] = Field(
         default=None,
@@ -103,18 +103,10 @@ class UserIntent(BaseModel):
                     some goal. You can take into account user's tone, expressions,
                     number of repetitions of a question, or this sort of behaviour.""")
 
-    help: bool = Field(
+    support: bool = Field(
         default=None,
-        description="""Given the above conversation, if we previously suggested
-                    a user to make a request to customer support, and now the
-                    user agreed to send a request for help from support,
-                    then fire this flag.""")
-
-    request: bool = Field(
-        default=None,
-        description="""Given the above conversation, if we did not ask a user about
-                    contacting support, but a user expressed desire to make a request
-                    to support, to tell them something, or to ask a question.""")
+        description="""Given the above conversation, if a user wants to make a
+                    request to the customer support, then fire this flag.""")
 
     agent: bool = Field(
         default=None,
@@ -133,10 +125,14 @@ class ExpectedIntent(BaseModel):
 
 class SupportRequest(BaseModel):
     """A user wants to make a request to customer support because they faced
-    some problem, have a question or require a help of a human specialist."""
+    some problem, have a question or require a help of a human specialist.
+    Determine the reason why a user wants to make a request to customer
+    support from the above conversation. Try to extract the details of
+    user's intent for the customer support. Compose a self-contained summary
+    of essence of user's request of AT LEAST 3 sentences. User MUST specify
+    precisely WHAT they want or need help WITH."""
 
-    details: str = Field(
+    details: str | None = Field(
         default=None,
-        description="""A concise, self-contained summary of user's support
-                    request extracted from the conversation with a user."""
+        description="""A concise, self-contained summary of user's support request."""
     )
