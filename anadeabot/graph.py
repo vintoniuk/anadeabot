@@ -93,6 +93,20 @@ def grounding_node(state: State):
     return {'facts': documents}
 
 
+def intent_node(state: State, config: RunnableConfig):
+    if not isinstance(state['messages'][-1], HumanMessage):
+        return 'agent'
+    llm = config['configurable']['llm']
+    structured = llm.with_structured_output(UserIntent)
+    chain = (intent_detection_prompt | structured)
+    intent = chain.invoke({
+        'history': state['messages'],
+        'grounding': format_grounding(state['facts'])
+    })
+    detected = [i for i, detected in intent if detected]
+    return detected[0] if detected else 'agent'
+
+
 def struggle_node(state: State, config: RunnableConfig):
     llm = config['configurable']['llm']
     chain = (struggle_support_prompt | llm)
@@ -109,20 +123,6 @@ def choice_node(state: State, config: RunnableConfig):
     except ValidationError:
         return {'design': DesignChoice()}
     return {'design': design}
-
-
-def intent_node(state: State, config: RunnableConfig):
-    if not isinstance(state['messages'][-1], HumanMessage):
-        return 'agent'
-    llm = config['configurable']['llm']
-    structured = llm.with_structured_output(UserIntent)
-    chain = (intent_detection_prompt | structured)
-    intent = chain.invoke({
-        'history': state['messages'],
-        'grounding': format_grounding(state['facts'])
-    })
-    detected = [i for i, detected in intent if detected]
-    return detected[0] if detected else 'agent'
 
 
 def preference_node(state: State, config: RunnableConfig):

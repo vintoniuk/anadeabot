@@ -26,8 +26,9 @@ choice_detection_prompt = ChatPromptTemplate.from_messages([
         T-shirt design attributes, or decided to change their mind about previously
         chosen attribute options, then try to infer their values. If a user is not
         interested in a specific attribute, or is ready to go with an arbitrary option,
-        choose an option for that attribute on your own. If some attributes are not
-        present, do not worry and just leave them NONE, DO NOT MAKE UP VALUES.
+        choose an option for that attribute on your own. Use information from the
+        previous design only if a user EXPLICITLY asked about it. If some attributes are
+        not present, do not worry and just leave them NONE, DO NOT MAKE UP VALUES.
         ALL ATTRIBUTES ARE OPTIONAL, if a users specified unavailable options, LEAVE IT
         EMPTY.""")
 ])
