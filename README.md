@@ -10,19 +10,19 @@ The bot has the following abilities:
 
 - answer questions from users based on a FAQ
 
-- detect struggles of a user and send requests to support if needed
+- detect struggles of a user and send requests for support if needed
 
 ##### Stack
 
 The stack the app is built with is:
 
-- LangGraph as a framework
+- `LangGraph` as a framework
 
-- LangChain for RAG and model interactions
+- `LangChain` for RAG and model interactions
 
-- Pyrogram as an interface and API of the application
+- `Pyrogram` as an interface and API of the application
 
-- PostgreSQL as a primary database and a vectorstore
+- `PostgreSQL` as a primary database and a vectorstore
 
 ##### Overview
 
@@ -36,4 +36,4 @@ The entity-relationship diagram below illustrates the structure of the database.
 
 ##### Repository
 
-A main module is `graph`, it contains the application logic. `handlers` module contains Telegram message handlers. `prompts` and `schemas `modules contain LLM prompts and Pydantic schemas for structured output respectively. `tools` module contains T-shirt attribute recommendation tools. `options` is the possible attribute options. `models` contains ORM models and `database` module contains database queries. `middleware` is a wrapper for message handlers to provide automatic request context. `settings` contains application configuration.
+A main module is `graph`, it contains the application logic. `handlers` module contains Telegram message handlers. `prompts` and `schemas` modules contain LLM prompts and Pydantic schemas for structured output respectively. `tools` module contains T-shirt attribute recommendation tools. `options` is the possible attribute options. `models` contains ORM models and `database` module contains database queries. `middleware` is a wrapper for message handlers to provide automatic request context. `settings` contains application configuration.
