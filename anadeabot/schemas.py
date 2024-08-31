@@ -114,14 +114,6 @@ class UserIntent(BaseModel):
                     conversation.""")
 
 
-class ExpectedIntent(BaseModel):
-    struggle: int = 0
-    help: int = 0
-    choice: int = 0
-    decision: int = 0
-    question: int = 0
-
-
 class SupportRequest(BaseModel):
     """A user wants to make a request to customer support because they faced
     some problem, have a question or require a help of a human specialist.

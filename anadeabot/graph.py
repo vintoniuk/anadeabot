@@ -1,7 +1,7 @@
 from typing import TypedDict, Annotated
 from operator import itemgetter
 
-from langchain_core.messages import SystemMessage, AnyMessage, HumanMessage, RemoveMessage
+from langchain_core.messages import SystemMessage, AnyMessage, HumanMessage
 from langchain_core.runnables import RunnableConfig, RunnablePassthrough
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.output_parsers import StrOutputParser
@@ -15,14 +15,13 @@ from langgraph.graph.state import CompiledStateGraph
 from anadeabot.tools import option_tools
 from anadeabot.formatters import format_design, format_faq, format_grounding
 from anadeabot.database import faq_vectorstore, grounding_vectorstore
-from anadeabot.helpers import missing_attributes, resolve_intent
+from anadeabot.helpers import missing_attributes
 from anadeabot import database
 from anadeabot.schemas import (
     DesignChoice,
     BooleanOutput,
     UserIntent,
     SupportRequest,
-    ExpectedIntent
 )
 from anadeabot.prompts import (
     choice_detection_prompt,
