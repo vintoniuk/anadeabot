@@ -1,7 +1,7 @@
 from typing import TypedDict, Annotated
 from operator import itemgetter
 
-from langchain_core.messages import SystemMessage, AnyMessage, HumanMessage
+from langchain_core.messages import SystemMessage, AnyMessage, HumanMessage, RemoveMessage
 from langchain_core.runnables import RunnableConfig, RunnablePassthrough
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.output_parsers import StrOutputParser
@@ -119,7 +119,7 @@ def choice_node(state: State, config: RunnableConfig):
     structured = llm.with_structured_output(DesignChoice)
     chain = (choice_detection_prompt | structured)
     try:
-        design = chain.invoke({'history': state['messages']})
+        design = chain.invoke({'history': state['messages'][-1:]})
     except ValidationError:
         return {'design': DesignChoice()}
     return {'design': design}
@@ -174,12 +174,10 @@ def support_node(state: State, config: RunnableConfig):
     structured = llm.with_structured_output(BooleanOutput)
     chain = (check_for_request_details | structured)
     has_details = chain.invoke({'history': state['messages']})
-    print(has_details.value)
     if has_details.value:
         structured = llm.with_structured_output(SupportRequest)
         chain = (support_details_prompt | structured)
         request = chain.invoke({'history': state['messages']})
-        print(request.details)
         session = config['configurable']['session']
         user = database.get_user(config['configurable']['thread_id'], session=session)
         database.make_request(user, request.details, session=session)

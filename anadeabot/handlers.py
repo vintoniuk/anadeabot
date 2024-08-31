@@ -19,7 +19,7 @@ def start_handler(client: Client, message: Message, context: RequestContext):
     client.send_message(message.chat.id, state['messages'][-1].content)
 
 
-@App.on_message(filters.text)
+@App.on_message(filters.text & (~filters.command(['start', 'stop'])))
 @contextualize
 def message_handler(client: Client, message: Message, context: RequestContext):
     state = context.agent.invoke({
