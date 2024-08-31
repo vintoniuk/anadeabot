@@ -12,7 +12,21 @@ from anadeabot.settings import settings
 from anadeabot.schemas import DesignChoice
 from anadeabot.models import User, Order, Request
 
-engine = create_engine(settings.POSTGRES_URI)
+engine = create_engine(
+    settings.POSTGRES_URI,
+    pool_size=20,
+    max_overflow=10,
+    pool_pre_ping=True,
+    pool_use_lifo=True,
+    connect_args={
+        "connect_timeout": 10,
+        "tcp_user_timeout": 10_000,
+        "keepalives": 1,
+        "keepalives_idle": 5,
+        "keepalives_count": 5,
+        "keepalives_interval": 1,
+    }
+)
 
 embeddings = OpenAIEmbeddings(
     model=settings.embedding_model,
