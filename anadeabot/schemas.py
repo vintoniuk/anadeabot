@@ -70,20 +70,20 @@ class BooleanOutput(BaseModel):
 
 
 class UserIntent(BaseModel):
-    """Determine the most probable intent of a user. If you can select any of them,
+    """Determine the most probable intent of a user. If you cannot select any of them,
      leave all empty. DO NOT FORCE YOURSELF TO MAKE A CHOICE."""
 
     preference: bool = Field(
         default=None,
-        description="""This is an intent of a human when a human wants to make a
-                    design decision or choose a specific property of a T-shirt.
-                    If a user expressed an intent to choose an option of some
-                    T-shirt property, fire this flag.""")
+        description="""This is an intent of a human, when a human wants to choose
+                    a SPECIFIC PROPERTY of a T-shirt. If a user expressed an
+                    intent to choose an option of some T-shirt property, fire
+                    this flag.""")
 
     decision: bool = Field(
         default=None,
-        description="""If a user has design options selected and if we previously
-                    asked a human to confirm their order, and they approve that
+        description="""If a user has design options selected and if we PREVIOUSLY
+                    ASKED a human to confirm their order, and they approve that
                     they indeed ready to make an order of the T-shirt or the do
                     not want to proceed with the order, that design is correct
                     and they are ready to make an order or cancel an order of a
@@ -111,8 +111,7 @@ class UserIntent(BaseModel):
     agent: bool = Field(
         default=None,
         description="""In any other case, where a user just want to talk, in a free
-                    conversation."""
-    )
+                    conversation.""")
 
 
 class ExpectedIntent(BaseModel):
