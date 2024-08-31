@@ -119,7 +119,7 @@ def choice_node(state: State, config: RunnableConfig):
     structured = llm.with_structured_output(DesignChoice)
     chain = (choice_detection_prompt | structured)
     try:
-        design = chain.invoke({'history': state['messages'][-1:]})
+        design = chain.invoke({'history': state['messages']})
     except ValidationError:
         return {'design': DesignChoice()}
     return {'design': design}
