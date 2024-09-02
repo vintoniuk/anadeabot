@@ -8,6 +8,8 @@ from langchain_core.output_parsers import StrOutputParser
 from langchain_core.documents import Document
 from langchain_core.pydantic_v1 import ValidationError
 
+from sqlalchemy.orm import Session
+
 from langgraph.graph import StateGraph, START, END, add_messages
 from langgraph.prebuilt import ToolNode
 from langgraph.graph.state import CompiledStateGraph
@@ -67,6 +69,7 @@ class State(TypedDict):
 class ConfigSchema(TypedDict):
     llm: BaseChatModel
     thread_id: str
+    session: Session
 
 
 def tool_redirect(destination: str = '__end__', tool_node: str = 'tools'):

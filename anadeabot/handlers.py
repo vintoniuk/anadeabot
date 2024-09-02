@@ -15,7 +15,7 @@ from anadeabot.middleware import contextualize, RequestContext
 def start_handler(client: Client, message: Message, context: RequestContext):
     state = context.agent.invoke({
         'messages': [prompts.start_agent_system_prompt, prompts.greeting_prompt]
-    }, config={'configurable': context.config})
+    }, config={'configurable': context.config, 'callbacks': [context.tracer]})
     client.send_message(message.chat.id, state['messages'][-1].content)
 
 
@@ -24,7 +24,7 @@ def start_handler(client: Client, message: Message, context: RequestContext):
 def message_handler(client: Client, message: Message, context: RequestContext):
     state = context.agent.invoke({
         'messages': HumanMessage(message.text)
-    }, config={'configurable': context.config})
+    }, config={'configurable': context.config, 'callbacks': [context.tracer]})
     client.send_message(message.chat.id, state['messages'][-1].content)
 
 
@@ -33,6 +33,6 @@ def message_handler(client: Client, message: Message, context: RequestContext):
 def stop_handler(client: Client, message: Message, context: RequestContext):
     state = context.agent.invoke({
         'messages': [prompts.say_goodbye_user_prompt]
-    }, config={'configurable': context.config})
+    }, config={'configurable': context.config, 'callbacks': [context.tracer]})
     database.delete_user(context.user, session=context.session)
     client.send_message(message.chat.id, state['messages'][-1].content)

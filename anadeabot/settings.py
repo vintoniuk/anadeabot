@@ -11,6 +11,8 @@ class Settings(BaseSettings):
     API_HASH: Optional[str] = None
     BOT_TOKEN: Optional[str] = None
 
+    LANGCHAIN_API_KEY: Optional[str] = None
+
     OPENAI_API_KEY: str
 
     POSTGRES_URI: str

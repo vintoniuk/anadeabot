@@ -10,14 +10,17 @@ from pyrogram.types import Message
 from sqlalchemy.orm import Session
 
 from langchain_openai import ChatOpenAI
+from langchain_core.tracers import LangChainTracer
 from langgraph.graph.state import CompiledStateGraph
 from langgraph.checkpoint.base import BaseCheckpointSaver
 from langgraph.checkpoint.postgres import PostgresSaver
 
-from anadeabot import graph
+from langsmith import Client
+
 from anadeabot import database
 from anadeabot.models import User
 from anadeabot.settings import settings
+from anadeabot.graph import create_graph, ConfigSchema
 
 
 @dataclass
@@ -26,7 +29,8 @@ class RequestContext:
     session: Session
     memory: BaseCheckpointSaver
     agent: CompiledStateGraph
-    config: graph.ConfigSchema
+    tracer: LangChainTracer
+    config: ConfigSchema
 
 
 def handle(func: Callable, client: Client, message: Message):
@@ -38,10 +42,12 @@ def handle(func: Callable, client: Client, message: Message):
         PostgresSaver.from_conn_string(settings.POSTGRES_URI) as memory
     ):
         user = session.merge(user)
-        agent = graph.create_graph(memory)
-        llm = ChatOpenAI(model=settings.model, api_key=settings.OPENAI_API_KEY)
-        config = graph.ConfigSchema(thread_id=str(message.chat.id), llm=llm, session=session)
-        context = RequestContext(user, session, memory, agent, config)
+        agent = create_graph(memory)
+        langsmith_client = Client(api_key=settings.LANGCHAIN_API_KEY)
+        tracer = LangChainTracer(project_name='TeeCustomizer', client=langsmith_client)
+        llm = ChatOpenAI(model=settings.model, api_key=settings.OPENAI_API_KEY, temperature=0.1)
+        config = ConfigSchema(thread_id=str(message.chat.id), llm=llm, session=session)
+        context = RequestContext(user, session, memory, agent, tracer, config)
         return func(client, message, context)
 
 
