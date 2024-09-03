@@ -1,0 +1,31 @@
+conversations:
+
+  - turns:
+      - user_message: "Yes"
+      - user_message: "I would like a red T-shirt."
+        expected_state:
+          design:
+            color: "red"
+      - user_message: "Let it be size XS."
+        expected_state:
+          design:
+            size: "XS"
+      - user_message: "I want Crew Neck T-shirt"
+        expected_state:
+          design:
+            style: "Crew Neck"
+      - user_message: "Female"
+        expected_state:
+          design:
+            gender: "female"
+      - user_message: "screen printing"
+        expected_state:
+          design:
+            printing: "Screen Printing"
+
+#  - turns:
+#      - user_message: "Yes"
+#      - user_message: "black is my life"
+#        expected_state:
+#          design:
+#            color: "black"
